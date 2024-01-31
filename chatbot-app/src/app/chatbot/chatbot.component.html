@@ -1,0 +1,16 @@
+<h2 id="chat-name">RAG Queen</h2>
+<div class="chat-container">
+  <div *ngFor="let message of chatMessages" 
+       [ngClass]="{'message': true, 
+                   'user': message.role === 'user', 
+                   'assistant': message.role === 'assistant', 
+                   'document': message.role === 'document'}" [innerHTML]="message.content"> <!-- Dangerous as user can inject html -->
+    {{ message.content }}
+  </div>
+</div>
+
+<div class="input-container">
+  <input type="text" class="input-message" [(ngModel)]="userMessage" 
+         placeholder="Enter your message" aria-label="Enter your message"/>
+  <button type="button" class="btn-send" (click)="sendMessage()">Send</button>
+</div>

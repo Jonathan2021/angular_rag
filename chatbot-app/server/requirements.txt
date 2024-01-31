@@ -1,0 +1,8 @@
+uvicorn
+fastapi
+azure-core
+azure-search-documents
+python-dotenv
+openai
+aiohttp
+
