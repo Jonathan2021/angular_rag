@@ -20,43 +20,14 @@ from langchain_community.vectorstores import ElasticsearchStore,FAISS,AzureSearc
 
 import inspect
 
-
-class DirectoryLoaderBis(DirectoryLoader):
-    """Load from a directory."""
-
-    def load_file(
-        self, item: Path, path: Path, docs: List[Document], pbar: Optional[Any]
-    ) -> None:
-        """Load a file.
-
-        Args:
-            item: File path.
-            path: Directory path.
-            docs: List of documents to append to.
-            pbar: Progress bar. Defaults to None.
-
-        """
-        if item.is_file():
-            if _is_visible(item.relative_to(path)) or self.load_hidden:
-                try:
-                    logger.debug(f"Processing file: {str(item)}")
-                    sub_docs = self.loader_cls(file_path=str(item), **self.loader_kwargs).load()
-                    docs.extend(sub_docs)
-                except Exception as e:
-                    if self.silent_errors:
-                        logger.warning(f"Error loading file {str(item)}: {e}")
-                    else:
-                        logger.error(f"Error loading file {str(item)}")
-                        raise e
-                finally:
-                    if pbar:
-                        pbar.update(1)
-
-
+class AzureDocIntelHat(AzureAIDocumentIntelligenceLoader):
+    def __init__(self, file_path, **kwargs):
+        super(AzureDocIntelHat, self).__init__(
+            file_path=file_path, **kwargs)
 
 loading_method_mapping={"PyPDFLoader":{"method":PyPDFLoader,
                          "directory":False},
-                "AzureAIDocumentIntelligenceLoader":{"method":AzureAIDocumentIntelligenceLoader,
+                "AzureAIDocumentIntelligenceLoader":{"method":AzureDocIntelHat,
                          "directory":False},
                          "TextLoader":{"method":TextLoader,
                          "directory":False}}
@@ -135,8 +106,8 @@ def LoadAndSplit(method_loading:str,
     if splitter_kwargs is None: splitter_kwargs=kwargs
     if method_loading is not None: directory_loader_kwargs["loader_cls"]=loading_method_mapping[method_loading]["method"]
 
-    directory_loader_kwargs=select_correct_parameters(DirectoryLoaderBis,**directory_loader_kwargs)
-    loader = DirectoryLoaderBis(**directory_loader_kwargs)
+    directory_loader_kwargs=select_correct_parameters(DirectoryLoader,**directory_loader_kwargs)
+    loader = DirectoryLoader(**directory_loader_kwargs)
     docs = loader.load()
 
     if method_splitting is not None:
