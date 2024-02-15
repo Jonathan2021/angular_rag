@@ -71,7 +71,10 @@ splitting_method_mapping={"MarkdownHeaderTextSplitter":{"method":MarkdownHeaderT
 def select_correct_parameters(constructor,**kwargs: Any):
      # Get the parameters of the loader
     parameters = inspect.signature(constructor).parameters
-    return {key:kwargs[key] for key in parameters if key in kwargs.keys()}
+    if 'kwargs' in parameters:
+        return kwargs
+    else:
+        return {key:kwargs[key] for key in parameters if key in kwargs.keys()}
 
 
 def DocumentLoader(method:str,**kwargs: Any):
@@ -174,8 +177,8 @@ def VectorStoreConstructor(vector_store_map: str,**kwargs: Any):
 def IndexConstructor(embedding_map: str,
                      vector_store_map: str,
                      docs:Union[str, List[Document]],
-                     embedding_kwargs:dict=None,
                      db_kwargs:dict=None,
+                     embedding_kwargs:dict=None,
                      export_path: str=None,
                      **kwargs: Any):
 
@@ -187,7 +190,7 @@ def IndexConstructor(embedding_map: str,
     embeddings=EmbeddingsConstructor(embedding_map,**embedding_kwargs)
 
     vector_store=vector_store_mapping[vector_store_map]["store"]
-    
+
     db=vector_store.from_documents(documents=docs,
                                        embedding=embeddings,
                                        **select_correct_parameters(vector_store.from_documents,**db_kwargs))
@@ -195,6 +198,3 @@ def IndexConstructor(embedding_map: str,
         db.save_local(export_path)
 
     return db
-
-
-
