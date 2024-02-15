@@ -1,0 +1,32 @@
+config_load_and_split:
+  method_loading: "TextLoader"
+  method_splitting: "RecursiveCharacterTextSplitter"
+  path: 'D:\work\dataset\sotu'
+  export_path: 'D:\work\dataset\sotu\export'
+  glob: "**/*.txt"
+  use_multithreading: true
+  chunk_size: 1000
+  chunk_overlap: 100
+
+config_index:
+  embedding_map: "AzureOpenAIEmbeddings"
+  vector_store_map: "AzureSearch"
+  index_name: state-of-the-union
+
+config_chat:
+  max_tokens: 12000
+
+config_azure_retriever:
+  top_k: 3
+  index_name: state-of-the-union
+
+config_QA_chain:
+  return_source_documents: true
+
+config_conversation:
+  temperature: 0
+  max_tokens: 1000
+  top_p: 1
+  frequency_penalty: 0
+  presence_penalty: 0
+  stop: [' END']
