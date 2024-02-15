@@ -1,0 +1,12 @@
+# For the server
+uvicorn
+fastapi
+azure-core
+azure-search-documents
+python-dotenv
+openai
+aiohttp
+langchain
+langchain-community
+azure-ai-documentintelligence
+unstructured[pdf]
