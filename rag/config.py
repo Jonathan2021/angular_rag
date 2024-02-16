@@ -3,7 +3,7 @@ from config_azure import *
 import click
 import glob
 
-chosen_path=os.path.join(root_dir,"config-default.yml")
+chosen_path=os.path.join(root_dir,"config-current.yml")
 
 PREDEFINED_PATHS={path.split("\\")[-1]:path for path in glob.glob(os.path.join(root_dir,f"*.yml"))}
 

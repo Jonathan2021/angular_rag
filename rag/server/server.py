@@ -58,9 +58,12 @@ def search_documents(user_input):
     results = search_client.search(
         user_input, 
         filter=None,
+        #query_type=QueryType.SEMANTIC,
         query_language="en-us", 
         query_speller="lexicon", 
+        #semantic_configuration_name="default",
         top=3)
+
     print(f"Raw results {results}")
     return [doc for doc in results]
 
@@ -117,7 +120,9 @@ async def chat(request: Request):
         ] if content else [{"role": "user", "content": user_input}])
 
         # Get the answer from OpenAI
+        print("FETCHING REPLY")
         reply = generate_answer(conversation)
+        print("MY REPLY IS:")
         print(reply)
 
         return {"reply": reply, "documents": [{"title" : doc[KB_FIELDS_SOURCEPAGE], "content": doc[KB_FIELDS_CONTENT]} for doc in search_results]}
