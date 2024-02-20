@@ -1,0 +1,32 @@
+env_path: "/home/jonathan/Lab/rag/rag/.env.development"
+
+loader:
+  class_name: "$import:langchain_community.document_loaders.DirectoryLoader"
+  init_args:
+    path: "/home/jonathan/Documents/articles/"
+    glob: "*.pdf"
+    loader_cls: "$import:langchain_community.document_loaders.PyPDFLoader"
+    #loader_kwargs:
+    #  api_endpoint: "$env:azure_doc_intel_endpoint"
+    #  api_key: "$env:azure_doc_intel_key"
+  method:
+    name: "load"
+
+transform:
+  - class_name: "$import:langchain.text_splitter.RecursiveCharacterTextSplitter"
+    init_args:
+      chunk_size: 100
+      chunk_overlap: 20
+    method:
+      name: "split_documents"
+
+store:
+  class_name: "$import:langchain_community.vectorstores.Chroma"
+  method:
+    name: "from_documents"
+    args:
+      embedding :
+        class_name: "$import:langchain_community.embeddings.GPT4AllEmbeddings"
+      collection_name: "science_papers"
+      persist_directory: "/home/jonathan/Documents/articles/db/"
+      
