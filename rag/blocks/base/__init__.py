@@ -8,11 +8,11 @@ class NoArgument:
 NO_ARGUMENT = NoArgument()
 
 class ArgumentsWrapper:
-    def __init__(self, args=NO_ARGUMENT, kwargs=NO_ARGUMENT, single_arg=False):
+    def __init__(self, args=NO_ARGUMENT, kwargs=NO_ARGUMENT, single_arg=True):
         if kwargs is not NO_ARGUMENT:
             if isinstance(kwargs, ArgumentsWrapper):
                 self.kwargs = kwargs.kwargs
-            elif isinstance(args, dict):
+            elif isinstance(kwargs, dict):
                 self.kwargs = kwargs
             else:
                 raise "Kwargs passed to ArgumentsWrapper has to be a dict or an ArgumentsWrapper"        
@@ -29,28 +29,25 @@ class ArgumentsWrapper:
                 self.args = [args]
                 self.single_arg = True
         else:
-            args = []
+            self.args = []
 
     def unwrap(self):
-        if len(self.args) == 1 and not self.kwargs:
-            return self.args[0]
         return self.args, self.kwargs
- 
-def unwrap_wrap(func):
-    @functools.wraps(func)
-    def wrapper(transform_instance, arg_wrapper):
-        if not isinstance(arg_wrapper, ArgumentsWrapper):
-            raise ValueError("Argument must be an instance of ArgumentsWrapper")
-        args, kwargs = arg_wrapper.unwrap()
-        result = func(transform_instance, *args, **kwargs)
-        return ArgumentsWrapper(args=result if transform_instance.nb_out)
+
+def unwrap_wrap(func, arg_wrapper):
+    if not isinstance(arg_wrapper, ArgumentsWrapper):
+        raise ValueError("Argument must be an instance of ArgumentsWrapper")
+    args, kwargs = arg_wrapper.unwrap()
+    result = func(*args, **kwargs)
+    # If the result is already an ArgumentsWrapper, return it directly.
+    if isinstance(result, ArgumentsWrapper):
+        return result
+    # Automatically wrap based on the output type.
+    if isinstance(result, tuple):
         return ArgumentsWrapper(args=result, single_arg=False)
-    return wrapper
-
-    def unwrap_wrap(method, wrapper, nb_output):
-        res = method(*wrapper.args, **wrapper.kwargs)
-        return ArgumentsWrapper(res if nb_output else NO_ARGUMENT, single_arg = nb_output==1)
-
+    else:
+        return ArgumentsWrapper(args=result, single_arg=True)
+ 
 class ConfigMethodCaller:
     def __init__(self, config, default_name=None, default_behavior=lambda **kwargs: kwargs):
         class_obj = handle_import(config['class_name'])
@@ -79,17 +76,13 @@ class ConfigMethodCaller:
             method_kwargs = process_args(config.get('method', {}).get("args", {}))
 
             def wrapped_method(argument=NO_ARGUMENT):
-                if argument is NO_ARGUMENT:
-                    print(f"Calling {method} with {argument} and {method_kwargs}")
-                    return method(**method_kwargs)
-                elif isinstance(argument, ArgumentsWrapper):
-                    print(f"ARGS: {argument.args}\tKWARGS: {argument.kwargs}")
-                    method_kwargs.update(argument.kwargs)
-                    print(f"Calling {method} with {argument.args} and {method_kwargs}")
-                    return method(*argument.args, **method_kwargs)
-                print(f"Calling {method} with {argument} and {method_kwargs}")
-                return method(argument, **method_kwargs)
-
+                if isinstance(argument, ArgumentsWrapper):
+                    argument.kwargs.update(method_kwargs)
+                else:
+                    argument=ArgumentsWrapper(args=argument, kwargs=method_kwargs, single_arg=True)
+                print(f"Calling {method} with {argument.args} and {argument.kwargs}")
+                return unwrap_wrap(method, argument)
+                
             self.method = wrapped_method                
 
 __all__ = [ConfigMethodCaller, ArgumentsWrapper]

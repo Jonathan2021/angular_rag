@@ -4,15 +4,10 @@ import os
 import json
 from collections.abc import Iterable
 from rag.blocks.base import ConfigMethodCaller, ArgumentsWrapper
-from functools import partial
 
-
-class Transform:
-    def __init__(self, nb_out=1):
-        self.hat = partial(ArgumentsWrapper.unwrap_wrap, nb_out=1)
-
-    def transform(self, arg):
-        return self.hat(self._transform, arg, self.nb_output)
+class Transform(abc.ABC):
+    def transform(self, docs):
+        return self._transform(docs)
 
     @abc.abstractmethod
     def _transform(self, docs):
@@ -20,7 +15,6 @@ class Transform:
 
 class ExportDocs(Transform):
     def __init__(self, export_path):
-        Transform.__init__(self, 1)
         self.export_path = Path(export_path)
 
     def _transform(self, docs):
@@ -43,9 +37,6 @@ class TransformChooserFromConfig(Transform):
         return self.transformer.transform(docs)
 
 class UnzipDocuments(Transform):
-    def __init__(self):
-        Transform.__init__(self, 2)
-
     def _transform(self, docs):
         content = []
         metadata = []
@@ -57,7 +48,6 @@ class UnzipDocuments(Transform):
     
 class ArgumentAdapter(Transform):
     def __init__(self, key_mapping = None, key_transpose = None):
-        Transform.__init__(1)
         if key_transpose:
             assert isinstance(key_transpose, dict), "key_transpose needs to be a dict"
             self.key_transpose = key_transpose
@@ -83,11 +73,14 @@ class ArgumentAdapter(Transform):
         assert(len(self.key_mapping) == len(entry)), "Not the same number of keys and values"
         return ArgumentsWrapper(kwargs=dict(zip(self.key_mapping, entry)))
     
+    def transform(self, *args, **kwargs):
+        return self._transform(*args, **kwargs)
+    
     def _transform(self, *args, **kwargs):
         new_kwargs = None
         new_kwargs = self._key_mapping(args)
-        new_kwargs.update(self._dict_transpose(kwargs))
-        return ArgumentsWrapper(kwargs=kwargs)
+        new_kwargs.kwargs.update(self._dict_transpose(kwargs))
+        return new_kwargs
 
 class UnwrapArguments(Transform):
     def _transform(self, wrapped):
