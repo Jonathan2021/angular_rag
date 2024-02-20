@@ -1,5 +1,5 @@
 import abc
-from rag_blocks.base import ConfigMethodCaller
+from rag.blocks.base import ConfigMethodCaller
 from langchain_community.document_loaders import AzureAIDocumentIntelligenceLoader
 
 
@@ -13,7 +13,7 @@ class AzureDocLoader(AzureAIDocumentIntelligenceLoader, Loader):
         AzureAIDocumentIntelligenceLoader.__init__(self, file_path=file_path, **kwargs)
     
     def load(self):
-        AzureAIDocumentIntelligenceLoader.load(self)
+        return AzureAIDocumentIntelligenceLoader.load(self)
 
 class LoaderFromConfig(ConfigMethodCaller, Loader):
     def __init__(self, config):

@@ -1,8 +1,8 @@
 import argparse
 from dotenv import load_dotenv
 import os
-from rag_blocks.pipelines import VectorPipelineFromConfig
-from rag_utils import load_configuration
+from rag.blocks.pipelines import VectorPipelineFromConfig
+from rag.utils import load_configuration
 
 def main():
     parser = argparse.ArgumentParser(description="Process a configuration for the pipeline.")

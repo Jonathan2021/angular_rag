@@ -1,5 +1,5 @@
 import abc
-from rag_blocks.base import ConfigMethodCaller
+from rag.blocks.base import ConfigMethodCaller
 
 class Storer:
     abc.abstractmethod

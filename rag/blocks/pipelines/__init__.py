@@ -1,7 +1,7 @@
 import abc
-from rag_blocks.loaders import LoaderFromConfig
-from rag_blocks.transforms import TransformChooserFromConfig
-from rag_blocks.storers import StorerFromConfig
+from rag.blocks.loaders import LoaderFromConfig
+from rag.blocks.transforms import TransformChooserFromConfig
+from rag.blocks.storers import StorerFromConfig
 
 
 class Pipeline:

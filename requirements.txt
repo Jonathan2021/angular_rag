@@ -8,6 +8,7 @@ openai
 aiohttp
 langchain
 langchain-community
+langchain-openai
 azure-ai-documentintelligence
 gpt4all
 chromadb
