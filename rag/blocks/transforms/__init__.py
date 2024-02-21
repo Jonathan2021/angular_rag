@@ -3,38 +3,45 @@ from pathlib import Path
 import os
 import json
 from collections.abc import Iterable
-from rag.blocks.base import ConfigMethodCaller, ArgumentsWrapper
+from rag.blocks.base import ConfigMethodCaller
+from rag.blocks.base import WrappedOutput
 
 class Transform(abc.ABC):
-    def transform(self, docs):
-        return self._transform(docs)
+    def transform(self, *args, **kwargs):
+        return self._transform(*args, **kwargs)
+    
+    def __call__(self, *args, **kwargs):
+        return self.transform(*args, **kwargs)
 
     @abc.abstractmethod
-    def _transform(self, docs):
+    def _transform(self, *args, **kwargs):
         pass
 
 class ExportDocs(Transform):
-    def __init__(self, export_path):
+    def __init__(self, export_path, json_lines=True):
         self.export_path = Path(export_path)
+        
+        def _lines_writer(file, docs):
+            for doc in docs:
+                file.write(
+                    json.dumps({"page_content":doc.page_content,"metadata":doc.metadata}) + "\n"
+                )
+        
+        def _json_writer(file, docs):
+            docs_list = [{"page_content": doc.page_content, "metadata": doc.metadata} for doc in docs]
+            data_to_write = {"docs": docs_list}
+            json.dump(data_to_write, file)
+        
+        self.writer = _lines_writer if json_lines else _json_writer
 
     def _transform(self, docs):
         directory = self.export_path.parent
         os.makedirs(directory, exist_ok=True)
-        for i,doc in enumerate(docs):
-            print(doc)
-            with open(self.export_path, "w") as outfile:
-                json.dump({"page_content":doc.page_content,"metadata":doc.metadata}, outfile)
+        
+        with open(self.export_path, "w") as outfile:
+            self.writer(outfile, docs)
         return docs
 
-class TransformChooserFromConfig(Transform):
-    def __init__(self, config):
-        if isinstance(config, list):
-            self.transformer = ChainTransforms(config)
-        else:
-            self.transformer = TransformWrapperFromConfig(config)
-    
-    def _transform(self, docs):
-        return self.transformer.transform(docs)
 
 class UnzipDocuments(Transform):
     def _transform(self, docs):
@@ -47,63 +54,42 @@ class UnzipDocuments(Transform):
 
     
 class ArgumentAdapter(Transform):
-    def __init__(self, key_mapping = None, key_transpose = None):
-        if key_transpose:
-            assert isinstance(key_transpose, dict), "key_transpose needs to be a dict"
-            self.key_transpose = key_transpose
+    def __init__(self, key_mapping, wrap_output=True):
+        mechanism = lambda x: x
+        if isinstance(key_mapping, dict):
+            def dict_transpose(entry):
+                new_entry = {}
+                for key, value in entry.items():
+                    new_entry[key_mapping.get(key, key)] = value
+                return new_entry
+            mechanism = dict_transpose
         else:
-            self.key_transpose = {}
+            def list_transpose(entry):
+                if not isinstance(entry, Iterable):
+                    entry = [entry]
+                assert(len(key_mapping) == len(entry)), "Not the same number of keys and values"
+                return dict(zip(key_mapping, entry))
+            mechanism = list_transpose
+        self.mechanism = mechanism
+        self.wrap_output = OutputWrapper().transform if wrap_output else lambda x: x
+    
+    def _transform(self, entry):
+        return self.wrap_output(self.mechanism(entry)) 
 
-        if key_mapping is not None:
-            self.key_mapping = key_mapping if isinstance(key_mapping, Iterable) else [key_mapping]
-        else:
-            self.key_mapping = []
-    
-    def _dict_transpose(self, entry):
-        assert (isinstance(entry, dict)), "Needs to be a dictionary"
-        new_entry = {}
-        for key, value in entry.items():
-            new_entry[self.key_transpose.get(key, key)] = value
-        return new_entry
-    
-    def _key_mapping(self, entry):
-        if not isinstance(entry, Iterable):
-            entry = [entry]
+class OutputWrapper(Transform):
+    def _transform(self, output):
+        return WrappedOutput(output)
 
-        assert(len(self.key_mapping) == len(entry)), "Not the same number of keys and values"
-        return ArgumentsWrapper(kwargs=dict(zip(self.key_mapping, entry)))
-    
-    def transform(self, *args, **kwargs):
-        return self._transform(*args, **kwargs)
-    
-    def _transform(self, *args, **kwargs):
-        new_kwargs = None
-        new_kwargs = self._key_mapping(args)
-        new_kwargs.kwargs.update(self._dict_transpose(kwargs))
-        return new_kwargs
-
-class UnwrapArguments(Transform):
+class OutputUnwrapper(Transform):
     def _transform(self, wrapped):
-        if isinstance(wrapped, ArgumentsWrapper):
-            return wrapped.args, wrapped.kwargs
-        return wrapped
+        assert isinstance(wrapped, WrappedOutput), "OutputUnwrapper expects a WrappedOutput Argument"
+        return wrapped.get()
 
-    
-
-class TransformWrapperFromConfig(Transform, ConfigMethodCaller):
+class TransformFromConfig(Transform, ConfigMethodCaller):
     def __init__(self, config):
         ConfigMethodCaller.__init__(self, config, default_name="transform", default_behavior=lambda docs: docs)
     
-    def _transform(self, docs):
-        return self.method(docs)
+    def _transform(self, *args, **kwargs):
+        return self.method(*args, **kwargs)
 
-class ChainTransforms(Transform):
-    def __init__(self, transforms_config):
-        self.transforms = [TransformWrapperFromConfig(config) for config in transforms_config]
-    
-    def _transform(self, docs):
-        for transformer in self.transforms:
-            docs = transformer.transform(docs)
-        return docs
-
-__all__ = [ChainTransforms, TransformWrapperFromConfig, ArgumentAdapter, TransformChooserFromConfig, UnzipDocuments, ExportDocs]
+__all__ = [TransformFromConfig, ArgumentAdapter, UnzipDocuments, ExportDocs]
