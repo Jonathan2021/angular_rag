@@ -1,0 +1,52 @@
+env_path: "/home/jonathan/Lab/rag/rag/.env.development"
+
+#loader:
+#  class_name: "$import:langchain_community.document_loaders.DirectoryLoader"
+#  init_args:
+#    path: "/home/jonathan/Documents/articles/"
+#    glob: "*.pdf"
+#    loader_cls: "$import:rag.blocks.loaders.AzureDocLoader"
+#    loader_kwargs:
+#      api_endpoint: "$env:azure_doc_intel_endpoint"
+#      api_key: "$env:azure_doc_intel_key"
+#    show_progress: true
+#    use_multithreading: true
+#  method:
+#    name: "load"
+
+loader:
+  class_name: "$import:langchain_community.document_loaders.JSONLoader"
+  init_args:
+    file_path: "/home/jonathan/Documents/articles/exports/intermediate.jsonl"
+    jq_schema: "."
+    content_key: "page_content"
+    json_lines: True
+  method:
+    name: "load"
+
+transform:
+  - class_name: "$import:langchain.text_splitter.RecursiveCharacterTextSplitter"
+    init_args:
+      chunk_size: 1000
+      chunk_overlap: 300
+    method:
+      name: "split_documents"
+  - class_name: "$import:rag.blocks.transforms.ExportDocs"
+    init_args:
+      export_path: "/home/jonathan/Documents/articles/exports/intermediate.jsonl"
+
+store:
+  class_name: "$import:langchain_community.vectorstores.AzureSearch"
+  method:
+    name: "from_documents"
+    args:
+      embedding :
+        class_name: "$import:langchain_openai.AzureOpenAIEmbeddings"
+        init_args:
+          azure_deployment: "$env:azure_openai_embedding_id"
+          openai_api_key: "$env:azure_openai_key"
+          azure_endpoint: "$env:azure_openai_endpoint"
+          openai_api_version: "2023-05-15"
+      azure_search_endpoint: "$env:azure_ai_search_endpoint"
+      azure_search_key: "$env:azure_ai_search_key"
+      index_name: "science_papers"

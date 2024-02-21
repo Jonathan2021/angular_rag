@@ -27,7 +27,7 @@ class ConfigMethodCaller:
             class_instance = class_obj(**init_args)
             print(f"CREATED CLASS {class_obj}({init_args})")
             target = class_instance
-        except TypeError as e:
+        except Exception as e:
             print(e)
             # If the class cannot be instantiated, use the class itself as the target for method resolution
             class_instance = None

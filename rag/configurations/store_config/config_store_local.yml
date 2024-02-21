@@ -12,8 +12,8 @@ loader:
 transform:
   - class_name: "$import:langchain.text_splitter.RecursiveCharacterTextSplitter"
     init_args:
-      chunk_size: 100
-      chunk_overlap: 20
+      chunk_size: 1000
+      chunk_overlap: 300
     method:
       name: "split_documents"
 

@@ -1,74 +1,16 @@
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
-from azure.search.documents.models import QueryType
-import os
+from langchain.chains import  ConversationalRetrievalChain
+from rag.utils import load_configuration
+import json
+import uvicorn
+import argparse
 from dotenv import load_dotenv
-from openai import AzureOpenAI
+import os
+from rag.blocks.chains import ChainerFromConfig
 
-# Loading environment variables
-load_dotenv()
-
-
-# Azure credentials and search client setup
-service_name = os.getenv('searchservice')
-search_key = os.getenv('searchkey')
-search_endpoint = f"https://{service_name}.search.windows.net/"
-index_name = os.getenv('index')
-search_credential = AzureKeyCredential(search_key)
-
-azure_endpoint = os.getenv("azure_endpoint")
-azure_key = os.getenv("azure_key")
-
-deployment_id = os.getenv("deployment_id")
-
-
-KB_FIELDS_CONTENT = os.environ.get("KB_FIELDS_CONTENT") or "content"
-KB_FIELDS_CATEGORY = os.environ.get("KB_FIELDS_CATEGORY") or "category"
-KB_FIELDS_SOURCEPAGE = os.environ.get("KB_FIELDS_SOURCEPAGE") or "sourcepage"
-
-
-openai_client = AzureOpenAI(
-  azure_endpoint = azure_endpoint, 
-  api_key= azure_key,  
-  api_version="2023-12-01-preview"
-)
-
-search_client = SearchClient(
-    endpoint=search_endpoint,
-    index_name=index_name,
-    credential=search_credential)
-
-def generate_answer(conversation):
-    response = openai_client.chat.completions.create(
-    model=deployment_id,
-    messages=conversation,
-    temperature=0,
-    max_tokens=1000,
-    top_p=1,
-    frequency_penalty=0,
-    presence_penalty=0,
-    stop = [' END']
-    )
-    return (response.choices[0].message.content).strip()
-
-# Define your search logic here
-def search_documents(user_input):
-    results = search_client.search(
-        user_input, 
-        filter=None,
-        #query_type=QueryType.SEMANTIC,
-        query_language="en-us", 
-        query_speller="lexicon", 
-        #semantic_configuration_name="default",
-        top=3)
-
-    print(f"Raw results {results}")
-    return [doc for doc in results]
-
-#class ChatHistory(BaseModel):
-#    chatHistory: list[dict[str, str]]
+chatbot = None
 
 # FastAPI app instance
 app = FastAPI()
@@ -83,7 +25,7 @@ app.add_middleware(
 )
 
 @app.exception_handler(Exception)
-async def exception_handler(request: Request, exc: Exception):
+async def exception_handler(exc: Exception):
     return JSONResponse(status_code=500, content={"message": str(exc)})
 
 @app.post("/chat")
@@ -98,38 +40,50 @@ async def chat(request: Request):
         raise HTTPException(status_code=400, detail="No message provided in the request")
 
     try:
-        # Search documents based on user input
-        search_results = search_documents(user_input)
-        print(search_results)
-        
-        if search_results:
-            # Prepare the content for OpenAI prompt
-            results = [doc[KB_FIELDS_SOURCEPAGE] + ": " + doc[KB_FIELDS_CONTENT].replace("\n", "").replace("\r", "") for doc in search_results]
-            content = "\n".join(results)
-            #content = "\n".join([doc['content'] for doc in search_results])
-        else:
-            content = None
+        # Search documents based on user input and history
+        QandAs=[(message['question'],message['content']) for message in chat_history if message['role'] == 'assistant']
+        print(QandAs)
+        response = chatbot({"question": user_input,'chat_history':QandAs})
 
-        # Generate the conversation format for OpenAI
-        conversation = [
-            {"role": "system", "content": "Assistant is a great language model that accurately answers questions based on document entries."}] + \
-            [message for message in chat_history if message['role'] != 'document'] + \
-        ([
-            {"role": "assistant", "content": content},
-            {"role": "user", "content": user_input}
-        ] if content else [{"role": "user", "content": user_input}])
-
-        # Get the answer from OpenAI
-        print("FETCHING REPLY")
-        reply = generate_answer(conversation)
-        print("MY REPLY IS:")
+        # Get the answer
+        reply = response['answer']
+        print(response)
         print(reply)
-
-        return {"reply": reply, "documents": [{"title" : doc[KB_FIELDS_SOURCEPAGE], "content": doc[KB_FIELDS_CONTENT]} for doc in search_results]}
+        return {"reply": reply,
+                "documents": [{
+                    "title" : doc.metadata['source'],
+                    "content": doc.page_content} for doc in response.get("source_documents", [])]}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def main():
+    global chatbot
+    
+    parser = argparse.ArgumentParser(description="Process a configuration for the server.")
+    parser.add_argument("--config", required=True, help="Path to the configuration file.")
+    parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode.")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.config):
+        raise FileNotFoundError(f"The configuration file {args.config} does not exist.")
+
+    config = load_configuration(args.config)
+
+    if "env_path" in config:
+        load_dotenv(dotenv_path=config["env_path"])
+
+    if args.verbose:
+        print("Loaded config")        
+    
+    assert ("chain" in config), "Your config doesn't have a chain !"
+    
+    chatbot = ChainerFromConfig(config["chain"]).chain()
+    
+    uvicorn.run(app, host="0.0.0.0", port=config.get("port", 3000))
+    
+    if args.verbose:
+        print("Your RAG is up and running")
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=3000)
+    main()

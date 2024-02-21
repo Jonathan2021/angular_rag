@@ -2,13 +2,15 @@
 uvicorn
 fastapi
 azure-core
-azure-search-documents=="11.4.0b8"
+azure-search-documents==11.4.0b8
+jq
 python-dotenv
 openai
 aiohttp
 langchain
 langchain-community
 langchain-openai
+langchain-core
 azure-ai-documentintelligence
 gpt4all
 chromadb

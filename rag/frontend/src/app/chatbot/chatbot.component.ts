@@ -10,13 +10,11 @@ import { OpenAiApiService } from '../services/open-ai-api.service';
 export class ChatbotComponent {
   userMessage!: string;
   assistantReply!: string;
-  chatMessages: { role: string, content: string }[] = [];
+  chatMessages: { role: string, content: string, question?: string }[] = [];
   documents: { title: string, content: string }[] = [];  // Array to store documents
-  
   formatDocumentForDisplay(doc : { title: string, content: string }): string {
     return `<strong>Document Title:</strong> ${doc.title}<br><strong>Content:</strong> ${doc.content}`;
   }
-
 
   constructor(private openAiApiService: OpenAiApiService){}
 
@@ -32,10 +30,8 @@ export class ChatbotComponent {
           this.chatMessages.push({ role: 'document', content: this.formatDocumentForDisplay(doc) });
         });
       }
-
       this.assistantReply = response.reply;
-      this.chatMessages.push({ role: 'assistant', content: this.assistantReply });
-
+      this.chatMessages.push({ role: 'assistant', content: this.assistantReply, question: userMessage });
       this.userMessage = '';
     });
   }

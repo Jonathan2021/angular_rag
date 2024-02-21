@@ -59,7 +59,6 @@ def unwrap_wrap(func, arg_wrapper):
     if not isinstance(arg_wrapper, ArgumentsWrapper):
         raise ValueError("Argument must be an instance of ArgumentsWrapper")
     args, kwargs = arg_wrapper.unwrap()
-    print(f"Calling {func} with {args} and {kwargs}")
     result = func(*args, **kwargs)
     return ArgumentsWrapper.from_output(result)
 
@@ -69,7 +68,7 @@ class PassThroughStep:
 
 PASS_THROUGH = PassThroughStep()
 
-class Pipeline:
+class Pipeline(abc.ABC):
     @abc.abstractmethod
     def __init__(self, *steps):
         self.steps = steps

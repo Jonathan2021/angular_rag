@@ -11,7 +11,7 @@ export class OpenAiApiService {
 
   constructor(private http: HttpClient) { }
 
-  public sendMessage(chatHistory: { role: string, content: string }[]) {
+  public sendMessage(chatHistory: { role: string, content: string, question?: string }[]) {
     return this.http.post<any>(`${this.apiUrl}/chat`, { chatHistory });
   }
 }
