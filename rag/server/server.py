@@ -5,8 +5,6 @@ from rag.utils import config_loader
 import uvicorn
 from rag.blocks.chains import ChainerFromConfig
 import subprocess
-import time
-import webbrowser
 from multiprocessing import Process
 
 args, config=config_loader()
