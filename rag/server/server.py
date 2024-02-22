@@ -59,16 +59,10 @@ async def chat(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-def front(path,port):
+def front(path):
 
-    # Step 1: Start Angular development server using subprocess
-    subprocess.run(['ng', 'serve'], shell=True, cwd=path)
-
-    # Allow some time for the Angular server to start (adjust as needed)
-    time.sleep(5)
-
-    # Step 2: Open the default browser to the Angular app URL
-    webbrowser.open(f"http://localhost:{port}")
+    # Start Angular development server using subprocess
+    subprocess.run(['ng', 'serve','--open=true'], shell=True, cwd=path)
 
 def back(port):
     uvicorn.run(app, host="0.0.0.0", port=port)
@@ -76,8 +70,7 @@ def back(port):
 def main():
 
     process_back = Process(target=back,args=(config.get("port", 3000),))
-    process_front = Process(target=front,args=(config.get("app_path", 'rag/frontend/'),
-                                               config.get('port_front', 4200)))
+    process_front = Process(target=front,args=(config.get("app_path", 'rag/frontend/'),))
 
     process_back.start()
     process_front.start()
