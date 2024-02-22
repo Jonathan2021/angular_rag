@@ -1,16 +1,19 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from langchain.chains import  ConversationalRetrievalChain
-from rag.utils import load_configuration
-import json
+from rag.utils import config_loader
 import uvicorn
-import argparse
-from dotenv import load_dotenv
-import os
 from rag.blocks.chains import ChainerFromConfig
+import subprocess
+import time
+import webbrowser
+from multiprocessing import Process
 
-chatbot = None
+args, config=config_loader()
+
+assert ("chain" in config), "Your config doesn't have a chain !"
+
+chatbot = ChainerFromConfig(config["chain"]).chain()
 
 # FastAPI app instance
 app = FastAPI()
@@ -48,7 +51,6 @@ async def chat(request: Request):
         # Get the answer
         reply = response['answer']
         print(response)
-        print(reply)
         return {"reply": reply,
                 "documents": [{
                     "title" : doc.metadata['source'],
@@ -57,33 +59,36 @@ async def chat(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+def front(path,port):
+
+    # Step 1: Start Angular development server using subprocess
+    subprocess.run(['ng', 'serve'], shell=True, cwd=path)
+
+    # Allow some time for the Angular server to start (adjust as needed)
+    time.sleep(5)
+
+    # Step 2: Open the default browser to the Angular app URL
+    webbrowser.open(f"http://localhost:{port}")
+
+def back(port):
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 def main():
-    global chatbot
-    
-    parser = argparse.ArgumentParser(description="Process a configuration for the server.")
-    parser.add_argument("--config", required=True, help="Path to the configuration file.")
-    parser.add_argument("--verbose", action="store_true", default=False, help="Enable verbose mode.")
-    args = parser.parse_args()
 
-    if not os.path.exists(args.config):
-        raise FileNotFoundError(f"The configuration file {args.config} does not exist.")
+    process_back = Process(target=back,args=(config.get("port", 3000),))
+    process_front = Process(target=front,args=(config.get("app_path", 'rag/frontend/'),
+                                               config.get('port_front', 4200)))
 
-    config = load_configuration(args.config)
+    process_back.start()
+    process_front.start()
 
-    if "env_path" in config:
-        load_dotenv(dotenv_path=config["env_path"])
+    process_back.join()
+    process_front.join()
 
-    if args.verbose:
-        print("Loaded config")        
-    
-    assert ("chain" in config), "Your config doesn't have a chain !"
-    
-    chatbot = ChainerFromConfig(config["chain"]).chain()
-    
-    uvicorn.run(app, host="0.0.0.0", port=config.get("port", 3000))
-    
     if args.verbose:
         print("Your RAG is up and running")
 
+
 if __name__ == "__main__":
     main()
+
