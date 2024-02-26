@@ -81,7 +81,7 @@ class Pipeline(abc.ABC):
         
         for step in self.steps:
             arg = unwrap_wrap(step, arg)
-        return arg.unwrap
+        return arg.unwrap()
         
 
 class VectorStoringPipeline(Pipeline):

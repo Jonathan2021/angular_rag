@@ -32,6 +32,7 @@ async def exception_handler(exc: Exception):
 @app.post("/chat")
 async def chat(request: Request):
     body = await request.json()
+    print(body)
     chat_history = body.get('chatHistory')
     print(chat_history)
     
@@ -82,4 +83,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -17,6 +17,7 @@ class Transform(abc.ABC):
     def _transform(self, *args, **kwargs):
         pass
 
+
 class ExportDocs(Transform):
     def __init__(self, export_path, json_lines=True):
         self.export_path = Path(export_path)
@@ -92,4 +93,4 @@ class TransformFromConfig(Transform, ConfigMethodCaller):
     def _transform(self, *args, **kwargs):
         return self.method(*args, **kwargs)
 
-__all__ = [TransformFromConfig, ArgumentAdapter, UnzipDocuments, ExportDocs]
+__all__ = [TransformFromConfig, ArgumentAdapter, UnzipDocuments, ExportDocs, Transform]

@@ -2,6 +2,10 @@ FRONT:
 nombre de paragraphes, category etc.
 
 BACK:
+Server:
+Doesn't seem to see metadata from the chatbot ?
+
+Add some possible preprompt (user defined). From text or file.
 
 Transform :
 Metadata enhancer
@@ -15,3 +19,5 @@ https://api.python.langchain.com/en/latest/chains/langchain.chains.conversationa
 
 OTHER:
 Do a Makefile
+
+

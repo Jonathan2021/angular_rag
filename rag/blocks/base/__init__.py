@@ -17,6 +17,16 @@ NO_ARGUMENT = NoArgument()
 
 NO_OUTPUT = NoOutput()
 
+class ReturnSelfWrapper:
+    def __init__(self, object):
+        self.object = object
+    
+    def get(self):
+        return self.object
+
+    def __call__(self, *args, **kwargs):
+        return self.get(*args, **kwargs)
+
 class ConfigMethodCaller:
     def __init__(self, config, default_name=None, default_behavior=lambda **kwargs: kwargs):
         class_obj = handle_import(config['class_name'])
@@ -51,4 +61,4 @@ class ConfigMethodCaller:
                 
             self.method = wrapped_method                
 
-__all__ = [ConfigMethodCaller, NO_ARGUMENT, NO_OUTPUT, WrappedOutput]
+__all__ = [ConfigMethodCaller, NO_ARGUMENT, NO_OUTPUT, WrappedOutput, ReturnSelfWrapper]
