@@ -51,7 +51,7 @@ async def chat(request: Request):
         print(reply)
         return {"reply": reply,
                 "documents": [{
-                    "title" : doc.metadata['source'],
+                    "title" : doc.metadata.get("source", "No source in metadata"),
                     "content": doc.page_content} for doc in response.get("source_documents", [])]}
 
     except Exception as e:

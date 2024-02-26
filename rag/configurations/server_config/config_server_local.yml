@@ -1,0 +1,33 @@
+env_path: "/home/jonathan/Lab/rag/rag/.env.development"
+
+port: 3000
+
+chain:
+  class_name: "$import:langchain.chains.ConversationalRetrievalChain"
+  method:
+    name: "from_llm"
+    args:
+      llm:
+        class_name: "$import:langchain_openai.AzureChatOpenAI"
+        init_args:
+          openai_api_key: "$env:azure_openai_key"
+          azure_endpoint: "$env:azure_openai_endpoint"
+          openai_api_version: "2023-05-15"
+          deployment_name: "$env:azure_openai_deployment_id"
+
+      retriever:
+        class_name: "$import:langchain_core.vectorstores.VectorStoreRetriever"
+        init_args:
+
+          vectorstore:
+            class_name: "$import:langchain_community.vectorstores.Chroma"
+            init_args:
+              collection_name: "science_papers"
+              embedding_function:
+                class_name: "$import:langchain_community.embeddings.GPT4AllEmbeddings"
+              persist_directory: "/home/jonathan/Documents/articles/db/"
+
+          search_kwargs:
+            k: 3
+      
+      return_source_documents: true
