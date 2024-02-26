@@ -1,10 +1,6 @@
-env_path: "D:/work/amaris/angular_rag-main/rag/.env"
+env_path: "/home/jonathan/Lab/rag/rag/.env.development"
 
 port: 3000
-
-port_front: 4200
-
-app_path: "D:/work/amaris/angular_rag-main/rag/frontend/"
 
 chain:
   class_name: "$import:langchain.chains.ConversationalRetrievalChain"
@@ -40,3 +36,4 @@ chain:
           k: 3
 
       return_source_documents: true
+

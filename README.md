@@ -1,5 +1,8 @@
-# Modular Retrieaval Augmented Generation Web app
+# Modular Retrieval Augmented Generation Web app
 The focus here is on the backend and the storing of documents in a vector database. A generic front-end is available for test purpose.
+
+## PREREQUESITS
+Make sure you have python 3 and npm installed.
 
 ## Usage flow
 
