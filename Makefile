@@ -1,7 +1,7 @@
 # Default paths for configuration files
-SERVER_CONFIG ?= /home/jonathan/Lab/rag/rag/configurations/server_config/config_server_azure.yml
-INDEX_CONFIG ?= /home/jonathan/Lab/rag/rag/configurations/store_config/config_store_azure.yml
-FRONT_CONFIG ?= /path/to/frontend/config.yml
+SERVER_CONFIG ?= ./rag/configurations/server_config/config_server_azure.yml
+INDEX_CONFIG ?= ./rag/home/jonathan/Lab/rag/rag/configurations/store_config/config_store_azure.yml
+FRONT_CONFIG ?= ./rag/path/to/frontend/config.yml
 
 # Default paths for scripts
 FRONT_DIR ?= ./rag/frontend
@@ -56,7 +56,7 @@ check-index-config:
 front:
 	cd $(FRONT_DIR) && $(FRONT_START_CMD) $(RUN_IN_BACKGROUND)
 
-server: check-server-config
+server:
 	$(SERVER_START_CMD) $(SERVER_SCRIPT_PATH) --config $(SERVER_CONFIG) $(SERVER_FLAGS)
 
 index: check-index-config
