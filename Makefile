@@ -56,7 +56,7 @@ check-index-config:
 front:
 	cd $(FRONT_DIR) && $(FRONT_START_CMD) $(RUN_IN_BACKGROUND)
 
-server:
+server: check-server-config
 	$(SERVER_START_CMD) $(SERVER_SCRIPT_PATH) --config $(SERVER_CONFIG) $(SERVER_FLAGS)
 
 index: check-index-config
