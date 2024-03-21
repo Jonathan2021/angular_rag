@@ -41,7 +41,7 @@ async def chat(request: Request):
 
     try:
         # Search documents based on user input and history
-        QandAs=[(message['question'],message['content']) for message in chat_history if message['role'] == 'assistant']
+        QandAs=[(message['question'], message['content']) for message in chat_history if message['role'] == 'assistant']
         print(QandAs)
         response = chatbot({"question": user_input,'chat_history':QandAs})
 

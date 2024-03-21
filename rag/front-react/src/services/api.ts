@@ -15,6 +15,7 @@ export default {
       return request<T>(uri, { method: 'GET', ...options });
     },
     post<T>(uri: string, body: any, options?: RequestInit): Promise<T> {
+      console.log(body);
       return request<T>(uri, { method: 'POST', body: JSON.stringify(body), ...options });
     },
 };

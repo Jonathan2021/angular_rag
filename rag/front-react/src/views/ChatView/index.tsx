@@ -38,36 +38,39 @@ const ChatView: React.FC = () => {
 
   const handleMessageSend = async () => {
     if (inputText.trim() !== '') {
-      setMessages([...messages, { chatbot: false, text: inputText }]);
       setInputText('');
-      setIsLoading(true)
+      setIsLoading(true);
+      setError(undefined); // Clear any existing errors
+      
+      const newUserMessage : IMessage = { chatbot: false, content: inputText, role: 'user' };
+      const newMessages = [...messages, newUserMessage]
+      setMessages(prevMessages => [...prevMessages, newUserMessage]);
 
       
       // LE SETTIMEOUT EST POUR TEST LE FRONT UNIQUEMENT
-      setTimeout(() => {
+      /*setTimeout(() => {
         const responseText = getRandomResponse(); // Obtenir un message aléatoire
         setMessages(prevMessages => [...prevMessages, { chatbot: true, text: responseText }]);
         setIsLoading(false)
-      }, 1000);
+        }, 1000);*/
       
       // FONCTION POUR APPELLER LE BACK ROBOT
-      /*
       try {
         // Envoi de la requête à l'API
-        const response = await post<ResponseRAG>('chat', messages);
+        const response = await post<ResponseRAG>('chat', {chatHistory: newMessages});
   
         // Gestion de la réponse de l'API
         setIsLoading(false); // Définit isLoading à false après la réponse
         if (response.documents && response.documents.length > 0) {
           // Si des documents sont retournés par l'API, les traiter et les ajouter aux messages
           response.documents.forEach((doc) => {
-            const docMessageObject: IMessage = { role: 'document', chatbot: false, text: doc.content };
-            setMessages([...messages, docMessageObject]); // Ajoute le message du document à la liste des messages
+            const docMessageObject: IMessage = { role: 'document', chatbot: false, content: doc.content };
+            setMessages(prevMessages => [...prevMessages, docMessageObject]); // Ajoute le message du document à la liste des messages
           });
         }
         // Ajoute la réponse de l'assistant à la liste des messages
-        const assistantMessageObject: IMessage = { role: 'assistant', chatbot: true, text: response.reply, question: inputText };
-        setMessages([...messages, assistantMessageObject]);
+        const assistantMessageObject: IMessage = { role: 'assistant', chatbot: true, content: response.reply, question: inputText };
+        setMessages(prevMessages => [...prevMessages, assistantMessageObject]);
         
         // Effectue le défilement vers le bas de la fenêtre de chat
         setTimeout(() => scrollToBottom(), 0);
@@ -75,7 +78,6 @@ const ChatView: React.FC = () => {
         console.error('Error sending message:', error);
         setError("Error server, please try again later.")
       }
-      */
     }
   };
 
@@ -98,10 +100,10 @@ const ChatView: React.FC = () => {
         <Box flex={1} sx={styles.chatContainerStyles}>
           {/* HAVING CHATS */}
           {messages.map((message) => (
-            <Chat text={message.text} chatbot={message.chatbot} />
+            <Chat content={message.content} chatbot={message.chatbot} role={message.role}/>
           ))}
           {isLoading && (
-            <Chat chatbot={true} text={error ? error : undefined} />
+            <Chat chatbot={true} content={error ? error : undefined} />
           )}
           <div ref={messagesEndRef} />
         </Box>

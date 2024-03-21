@@ -25,7 +25,7 @@ chain:
 
               azure_search_endpoint: "$env:azure_ai_search_endpoint"
               azure_search_key: "$env:azure_ai_search_key"
-              index_name: "science_papers"
+              index_name: "ai_act"
               embedding_function:
                 class_name: "$import:langchain_openai.AzureOpenAIEmbeddings"
                 init_args:

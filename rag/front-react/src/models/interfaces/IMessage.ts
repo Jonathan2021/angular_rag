@@ -1,6 +1,6 @@
 export interface IMessage {
     chatbot: boolean;
-    text?: string;
+    content?: string;
     role?: 'user' | 'assistant' | 'document';
     question?: string;
 }

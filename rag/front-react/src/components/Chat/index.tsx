@@ -1,11 +1,12 @@
 import React from 'react';
 import { Typography, Paper, Avatar, useTheme, CircularProgress } from '@mui/material';
 import amaris from 'assets/images/amaris.jpg';
+import knowledge from 'assets/images/books.jpg';
 import ragybot from 'assets/images/logo192.png'
 import { IMessage } from 'models/interfaces/IMessage';
 
 
-const Chat: React.FC<IMessage> = ({ text, chatbot }) => {
+const Chat: React.FC<IMessage> = ({ content, chatbot, role}) => {
     const theme = useTheme();
 
     return (
@@ -16,11 +17,11 @@ const Chat: React.FC<IMessage> = ({ text, chatbot }) => {
             display: 'flex',
             alignItems: 'center',
             }}>
-        <Avatar alt="You" src={chatbot ? ragybot : amaris} style={{ marginRight: theme.spacing(2) }} />
+            <Avatar alt="You" src={chatbot ? ragybot : (role === 'user' ? amaris : knowledge)} style={{ marginRight: theme.spacing(2) }} />
         <div>
             <Typography variant="h4">{chatbot ? "Ragybot.be" : "You"}</Typography>
-            {text ? (
-                <Typography>{text}</Typography>
+            {content ? (
+                <Typography>{content}</Typography>
             ) : (
                 <CircularProgress size={15} thickness={4} />
             )}
